@@ -8,15 +8,37 @@ A Python script that checks the availability status of a service using **downfor
 #### 1️⃣ Install Required Dependencies
 Ensure you have the required Python packages installed:
 ```bash
-pip install beautifulsoup4 cloudscraper groq
+pip install beautifulsoup4 cloudscraper groq flask
 ```
 
-#### 2️⃣ Configure & Run the Script
-Modify the `service_name` and `groq_api_key` in the script and run:
+#### 2️⃣ Run the Script
+There are two ways to use this script:
 
+- **For quick testing:** Run `main.py` directly.
+- **For deploying on a server:** Start `server-backend.py`, which will listen on port `5000`.
+
+##### ▶️ Quick Test (Run main.py)
+If you just want to test the script locally, modify the `service_name` and `groq_api_key` in `main.py`, then run:
 ```bash
-python service_status_checker.py
+python main.py
 ```
+
+##### 🌐 Deploy as a Server (Run server-backend.py)
+To set up a backend API for checking service status, start the Flask server:
+```bash
+python server-backend.py
+```
+By default, the server will listen on **port 5000**.
+
+You can then make API requests like:
+```bash
+curl "http://localhost:5000/check_status/google?language=fr"
+```
+This will return the service status of **Google** in French.
+
+---
+This project also includes an **Alexa Skill (alexa_skill.js)** to check service statuses via voice commands using an API.
+
 
 ### ![Français](https://flagcdn.com/20x15/fr.png) Français
 
