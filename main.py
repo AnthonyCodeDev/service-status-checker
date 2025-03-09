@@ -1,16 +1,31 @@
 import time
 import random
 from bs4 import BeautifulSoup
-import cloudscraper  # Pour contourner Cloudflare
-from groq import Groq  # Assurez-vous que le package groq est installé
+import cloudscraper
 
-# Clé API Groq (mettez votre propre clé ici)
+# Clé API Groq
 groq_api_key = "gsk_xxx"
 
-# Classe de vérification du statut d'un service via downforeveryoneorjustme.com
+def translate_to_french(english_message):
+    """
+    Traduit le message en anglais vers le français en utilisant l'API Groq.
+    """
+    from groq import Groq  # Veillez à avoir installé le package groq
+    prompt = f"Traduis ce texte en français : '{english_message}'"
+    client = Groq(api_key=groq_api_key)
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-8b-8192"
+    )
+    try:
+        french_message = chat_completion.choices[0].message.content
+    except Exception as e:
+        french_message = english_message
+    return french_message
+
 class ServiceStatusChecker:
     def __init__(self, service_name="chatgpt"):
-        self.service_name = service_name  # Nom du service
+        self.service_name = service_name  # Nom du service à vérifier
         self.url = f"https://downforeveryoneorjustme.com/{self.service_name}"
         self.scraper = cloudscraper.create_scraper(
             browser={
@@ -41,9 +56,7 @@ class ServiceStatusChecker:
     
     def fetch_page(self):
         try:
-            # Visite préalable du site principal pour contourner Cloudflare
             self.scraper.get("https://downforeveryoneorjustme.com/", headers=self.headers)
-            # Ajout de paramètres aléatoires pour éviter le cache
             timestamp = int(time.time())
             url_with_param = f"{self.url}?t={timestamp}&r={random.randint(1000, 9999)}"
             response = self.scraper.get(url_with_param, headers=self.headers, timeout=20)
@@ -54,21 +67,33 @@ class ServiceStatusChecker:
         except Exception:
             return None
     
-    def check_status(self):
+    def check_status(self, lang='en'):
+        """
+        Vérifie le statut du service et retourne un dictionnaire contenant :
+         - service : le nom du service,
+         - language : la langue demandée,
+         - status : "up", "down" ou "unknown",
+         - message : le message récupéré (traduit en français si demandé),
+         - url : l'URL consultée.
+        """
         html_content = self.fetch_page()
         if not html_content:
-            return {"status": "unknown", "message": ""}
+            return {
+                "service": self.service_name,
+                "language": lang,
+                "status": "unknown",
+                "message": "",
+                "url": self.url
+            }
         
         soup = BeautifulSoup(html_content, 'html.parser')
         message = ""
         
-        # Détermination de l'état en fonction du contenu HTML
         if "Yes, we are detecting problems with" in html_content and self.service_name in html_content:
             status = "down"
         elif "No, we are not detecting any problems with" in html_content and self.service_name in html_content:
             status = "up"
         else:
-            # Recherche des anciennes divs en cas d'absence des messages textuels attendus
             green_div = soup.find("div", class_=lambda c: c and "text-green-900" in c and "bg-green-300" in c)
             red_div = soup.find("div", class_=lambda c: c and "text-red-900" in c and "bg-red-300" in c)
             if green_div:
@@ -78,7 +103,6 @@ class ServiceStatusChecker:
             else:
                 status = "unknown"
         
-        # Extraction du message selon l'état (div avec classes spécifiques)
         if status == "down":
             msg_div = soup.find("div", class_=lambda c: c and "text-red-900/70" in c)
         elif status == "up":
@@ -89,28 +113,13 @@ class ServiceStatusChecker:
         if msg_div:
             message = msg_div.get_text(strip=True)
         
-        return {"status": status, "message": message}
-
-# Fonction pour traduire un message en français via l'API Groq
-def translate_to_french(english_message):
-    prompt = f"Traduis en français le message suivant : '{english_message}'"
-    client = Groq(api_key=groq_api_key)
-    chat_completion = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama3-8b-8192"
-    )
-    # Extraction du contenu traduit depuis la réponse
-    french_message = chat_completion['choices'][0]['message']['content']
-    return french_message
-
-if __name__ == "__main__":
-    # Exemple d'utilisation
-    checker = ServiceStatusChecker(service_name="chatgpt")  # Vous pouvez changer le service ici
-    result = checker.check_status()
-    
-    # Si un message est récupéré, on le traduit en français
-    if result["message"]:
-        result["message"] = translate_to_french(result["message"])
-    
-    status_text = "Up" if result["status"] == "up" else "Down" if result["status"] == "down" else "Unknown"
-    print(f"{checker.url}: {status_text}\nMessage en français: {result['message']}")
+        if lang in ['fr', 'f', 'français', 'french'] and message:
+            message = translate_to_french(message)
+        
+        return {
+            "service": self.service_name,
+            "language": lang,
+            "status": status,
+            "message": message,
+            "url": self.url
+        }
