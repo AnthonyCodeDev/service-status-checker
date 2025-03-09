@@ -38,23 +38,45 @@ This will return the service status of **Google** in French.
 
 ---
 This project also includes an **Alexa Skill (alexa_skill.js)** to check service statuses via voice commands using an API.
+  
+  <br>
+  
+## ![Français](https://flagcdn.com/20x15/fr.png) Français
 
+Un script Python qui vérifie l'état de disponibilité d'un service en utilisant **downforeveryoneorjustme.com**. Il contourne les protections Cloudflare, récupère le statut du service et traduit les messages en français grâce à l'**API Groq**.
 
-### ![Français](https://flagcdn.com/20x15/fr.png) Français
-
-Un script Python permettant de vérifier le statut de disponibilité d’un service via downforeveryoneorjustme.com.
-
-###  Installation & Utilisation
-#### 1️⃣ Installer les dépendances nécessaires
-Assurez-vous d’installer les bibliothèques Python requises :
-
+### Installation & Utilisation
+#### 1️⃣ Installer les dépendances requises
+Assurez-vous d'avoir les packages Python nécessaires installés :
 ```bash
-pip install beautifulsoup4 cloudscraper groq
+pip install beautifulsoup4 cloudscraper groq flask
 ```
 
-#### 2️⃣ Configurer et exécuter le script
-Modifiez le `service_name` et la `groq_api_key` dans le script, puis lancez :
+#### 2️⃣ Exécuter le script
+Il existe deux façons d'utiliser ce script :
 
+- **Pour un test rapide :** Exécutez `main.py` directement.
+- **Pour le déployer sur un serveur :** Lancez `server-backend.py`, qui écoutera sur le port `5000`.
+
+##### ▶️ Test rapide (Exécuter main.py)
+Si vous souhaitez simplement tester le script en local, modifiez `service_name` et `groq_api_key` dans `main.py`, puis exécutez :
 ```bash
-python service_status_checker.py
+python main.py
 ```
+
+##### 🌐 Déploiement sur un serveur (Exécuter server-backend.py)
+Pour configurer une API backend permettant de vérifier le statut des services, démarrez le serveur Flask :
+```bash
+python server-backend.py
+```
+Par défaut, le serveur écoutera sur **le port 5000**.
+
+Vous pouvez ensuite effectuer des requêtes API comme :
+```bash
+curl "http://localhost:5000/check_status/google?language=fr"
+```
+Cela retournera l'état du service **Google** en français.
+
+---
+Ce projet inclut également une **compétence Alexa (alexa_skill.js)** permettant de vérifier le statut des services par commande vocale via une API.
+
